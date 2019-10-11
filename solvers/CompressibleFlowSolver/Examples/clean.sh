@@ -1,0 +1,1 @@
+rm -r CylinderSubsonic_NS_WeakDG_LDG_SEM_*.chk CylinderSubsonic_NS_WeakDG_LDG_SEM.bak* CylinderSubsonic_NS_WeakDG_LDG_SEM_xml CylinderSubsonic_NS_WeakDG_LDG_SEM.fld
