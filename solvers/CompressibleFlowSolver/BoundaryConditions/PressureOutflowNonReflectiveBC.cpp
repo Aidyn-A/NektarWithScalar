@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// File: PressureOutflowBC.cpp
+// File: PressureOutflowNonReflectiveBC.cpp
 //
 // For more information, please see: http://www.nektar.info
 //
@@ -29,7 +29,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-// Description: Pressure outflow boundary condition
+// Description: Pressure outflow non-reflective boundary condition
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -41,7 +41,7 @@ namespace Nektar
 {
 
 std::string PressureOutflowNonReflectiveBC::className = GetCFSBndCondFactory().
-    RegisterCreatorFunction("PressureOutflowNonReflectiveBC",
+    RegisterCreatorFunction("PressureOutflowNonReflective",
                             PressureOutflowNonReflectiveBC::create,
                             "Pressure outflow non-reflective boundary condition.");
 
@@ -67,7 +67,7 @@ void PressureOutflowNonReflectiveBC::v_Apply(
     int nDimensions = m_spacedim;
 
     const Array<OneD, const int> &traceBndMap
-    = m_fields[0]->GetTraceBndMap();
+        = m_fields[0]->GetTraceBndMap();
 
     NekDouble gammaMinusOne    = m_gamma - 1.0;
     NekDouble gammaMinusOneInv = 1.0 / gammaMinusOne;
@@ -108,9 +108,9 @@ void PressureOutflowNonReflectiveBC::v_Apply(
          GetExpSize(); ++e)
     {
         npts = m_fields[0]->GetBndCondExpansions()[m_bcRegion]->
-        GetExp(e)->GetTotPoints();
+           GetExp(e)->GetTotPoints();
         id1 = m_fields[0]->GetBndCondExpansions()[m_bcRegion]->
-        GetPhys_Offset(e) ;
+            GetPhys_Offset(e) ;
         id2 = m_fields[0]->GetTrace()->GetPhys_Offset(traceBndMap[m_offset+e]);
 
         // Loop on points of m_bcRegion 'e'
@@ -128,13 +128,7 @@ void PressureOutflowNonReflectiveBC::v_Apply(
                     Ek += 0.5 * (Fwd[j][pnt] * Fwd[j][pnt]) / Fwd[0][pnt];
                 }
 
-                NekDouble Pf = gammaMinusOne *(Fwd[nDimensions+1][pnt] - Ek);
-                NekDouble cf = sqrt(m_gamma * Pf / Fwd[0][pnt]);
-                NekDouble uf = Vn[pnt];
-                NekDouble PB = Pf + 0.15*cf*(1.0-Mach[pnt])*(Pf-m_pInf)/(uf-cf);
-
-                NekDouble e = PB / (Fwd[0][pnt] * (m_gamma-1));
-                rhoeb = Fwd[0][pnt] * e + Ek;
+                rhoeb = m_pInf * gammaMinusOneInv + Ek;
 
                 // Partial extrapolation for subsonic cases
                 for (j = 0; j < nDimensions+1; ++j)
@@ -144,7 +138,7 @@ void PressureOutflowNonReflectiveBC::v_Apply(
                 }
 
                 (m_fields[nDimensions+1]->GetBndCondExpansions()[m_bcRegion]->
-                 UpdatePhys())[id1+i] = rhoeb;
+                 UpdatePhys())[id1+i] = 2.0 * rhoeb - Fwd[nDimensions+1][pnt];
 
         		// Scalars
                 for (j = nDimensions+2; j < nVariables; ++j)
